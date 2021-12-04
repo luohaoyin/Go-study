@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
+	_"github.com/go-sql-driver/mysql"
 	"os"
 )
 
@@ -34,7 +34,6 @@ func initDB() (err error){
 		fmt.Printf("open %s faild, err:%v\n",dsn,err)
 		return
 	}
-	fmt.Println("连接成功！")
 	return
 }//连接数据库
 
@@ -83,7 +82,7 @@ var choice int
 
 func menu() {
 	fmt.Println("欢迎来到世界树")
-	t := []string{"1注册","2登录","3设置密保信息",}
+	t := []string{"1注册","2登录","3设置密保信息","4忘记密码"}
 	fmt.Println(t)
 	fmt.Print("请输入您的选择")
 	fmt.Scanln(&choice)
@@ -94,6 +93,8 @@ func menu() {
 			Login()
 		case 3:
 			Settings()
+	    case 4:
+			Verify()
 		default:
 			fmt.Println("输入错误，请重新输入")
 		}
@@ -101,22 +102,27 @@ func menu() {
 
 func Resign(){
 	fmt.Print("请输入您的账号：")
-	fmt.Scanln(Customerdata1.ID)
+	fmt.Scanln(&Customerdata1.ID)
 	fmt.Print("请输入您的密码：")
-	fmt.Scanln(Customerdata1.Password)
+	fmt.Scanln(&Customerdata1.Password)
 
-	r := "insert into Customerdata1(id,password) values (?,?)"
+	r := "insert into customerdata1(id,password) values (?,?)"
+
 	re,err := db.Exec(r,Customerdata1.ID,Customerdata1.Password)
+
 	if err != nil{
-		fmt.Printf("insert failed,err:%v\n",err)
+		fmt.Printf("注册失败，\n err:%v",err)
 		return
 	}
 	newID,err :=re.LastInsertId()
+
 	if err != nil{
 		fmt.Printf("get lastinsert id failed,err:%v\n",err)
 	}
 	fmt.Printf("insert success, the id is %d.\n", newID)
-	fmt.Println("恭喜您，创建成功！请输入2进行登录！")
+	fmt.Println("恭喜您，创建成功！")
+
+
 }//注册时调用的函数
 
 func Settings(){
@@ -170,29 +176,57 @@ func Login(){
 		}
 	}//登陆时调用的函数
 
-/*
-func Update(){
+func Verify(){
 	fmt.Print("请输入您的账号：")
-	fmt.Scanln(&customerdata2.ID)
+	fmt.Scanln(&Customerdata2.ID)
+
+	var U struct{
+		ID string `db:"id"`
+		Questions string `db:"questions"`
+		Answers string `db:"answers"`
+	}
 
 	str := "select id from customerdata2 where id = ?" //查询custmerdata2中的id信息
-	ID := db.QueryRow(str,customerdata2.ID)
-	err := ID.Scan(customerdata2.ID) //调用返回值
+	err :=db.QueryRow(str,Customerdata2.ID).Scan(&U.ID)//查询输入的id与 customerdata2 中的id是否一致
+
 	if err != nil {
 		fmt.Println("账号错误")
-	} else {
-		str2 := "select questions from customerdata2 where id = &customerdata2.ID"
-		ques := db.QueryRow(str2, customerdata2.Questions)
-		err := ques.Scan(customerdata2.Questions)
+	} else if Customerdata2.ID == U.ID {
+		str2 := "select questions from customerdata2 where id = ?"
+		err := db.QueryRow(str2,Customerdata2.ID).Scan(&U.Questions)
 		if err != nil {
 			fmt.Println("未设置密保")
 		} else {
-			fmt.Println(customerdata2.Questions)
+			fmt.Println(U.Questions)
 		}
 	}
-
 	fmt.Print("请输入您的密保答案：")
-	fmt.Scanln(&customerdata2.Answers)
+	fmt.Scanln(&Customerdata2.Answers)
 
-}//忘记密码，调用的更新函数
-*/
+	 str3 := "select customer2_answers from where id = ?"
+	 err2 := db.QueryRow(str3,Customerdata2.ID).Scan(&U.Answers)
+
+	 if err2 != nil{
+		 fmt.Println("查询密保答案这里出现error！")
+	 }else if Customerdata2.Answers == U.Answers{
+		 fmt.Println("恭喜您，回答正确，请输入新的密码！")
+		 fmt.Scanln(&Customerdata1.Password)
+		 Updata()
+	}
+}//忘记密码，调用的验证函数
+
+func Updata(){
+
+		sqlStr := "update customerdata1 set password =? where id = ?"
+		ret, err := db.Exec(sqlStr, Customerdata1.Password, Customerdata2.ID)
+		if err != nil {
+			fmt.Printf("修改失败！ err:%v\n", err)
+			return
+		}
+		n, err := ret.RowsAffected() // 操作影响的行数
+		if err != nil {
+			fmt.Printf("操作行数处理失败  err:%v\n", err)
+			return
+		}
+		fmt.Printf("密码修改成功！  affected rows:%d\n", n)
+	}
