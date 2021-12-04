@@ -203,7 +203,7 @@ func Verify(){
 	fmt.Print("请输入您的密保答案：")
 	fmt.Scanln(&Customerdata2.Answers)
 
-	 str3 := "select customer2_answers from where id = ?"
+	 str3 := "select answers from customerdata2 where id = ?"
 	 err2 := db.QueryRow(str3,Customerdata2.ID).Scan(&U.Answers)
 
 	 if err2 != nil{
