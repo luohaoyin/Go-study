@@ -2,21 +2,20 @@ package main
 
 import (
 	"fmt"
-	"time"
+	"sync"
 )
 /*
-**基于管道**，我们可以把打印的协程拓展为N个。
-
-请在``main``函数中开启10个协程输出一段话，要求10行话全部输出完毕后再结束``main``函数。
+报错原因：main函数里面，声明一个变量后开启子协程，子协程需要完成输出后并执行lock操作；
+        与此同时，主协程继续向下执行unlock操作。
+        主协程完成操作后，子协程还没完成就退出了，即unlock了一个未lock的变量，因此报错。
 */
-func hello(){
-	fmt.Println("hello,world.")
-}
+func main() {
+	var mu sync.Mutex
 
+	go func() {
+		fmt.Println("有点强人锁男")
+		mu.Lock()
+	}()
 
-func main(){
-   for i:=1;i<=10;i++{
-	   go hello()
-   }
-   time.Sleep(time.Second)
+	mu.Unlock()
 }
