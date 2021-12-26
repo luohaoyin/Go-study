@@ -1,21 +1,13 @@
 package main
 
-import (
-	"fmt"
-	"sync"
-)
-/*
-报错原因：main函数里面，声明一个变量后开启子协程，子协程需要完成输出后并执行lock操作；
-        与此同时，主协程继续向下执行unlock操作。
-        主协程完成操作后，子协程还没完成就退出了，即unlock了一个未lock的变量，因此报错。
-*/
+import "fmt"
+
 func main() {
-	var mu sync.Mutex
-
+	ch := make(chan int,1)
+	ch <- 1
 	go func() {
-		fmt.Println("有点强人锁男")
-		mu.Lock()
+		fmt.Println("下山的路又堵起了")
+		<- ch
 	}()
-
-	mu.Unlock()
+	ch <- 2
 }
